@@ -1,5 +1,6 @@
-from tensorflow.keras.models import Model
-from Norm_layer import *
+import tensorflow as tf
+import os
+
 def Discriminator_s(in_shape=(1024, 12)):
     myinput = tf.keras.layers.Input(shape=in_shape)
     #32个不同的卷积核、一维卷积核尺度为3*11，往上升高、每次步长为1、padding表示尺寸长度不变(param=3*11*32+32)
@@ -15,7 +16,7 @@ def Discriminator_s(in_shape=(1024, 12)):
     # activation='sigmoid'
     mymodel = tf.keras.Model(inputs=myinput, outputs=y)
     return mymodel
-def Generator_Meg(in_shape=(1024, 1), outdim=12, concate=1,kernel=4,filnums=64):
+def Generator_Meg(in_shape=(1024, 1), outdim=12, concate=0,kernel=4,filnums=64):
     # define model
     myinput = tf.keras.layers.Input(shape=in_shape)
     x0 = tf.keras.layers.Conv1D(filters=filnums, kernel_size=17, activation=tf.keras.layers.LeakyReLU(0.2), padding='same')(myinput)
@@ -104,8 +105,9 @@ def Generator_Meg(in_shape=(1024, 1), outdim=12, concate=1,kernel=4,filnums=64):
     x14 = x13 + x14
     # x14 = attentionblock(x14)
     y = tf.keras.layers.Conv1DTranspose(outdim, 5, activation=tf.keras.layers.LeakyReLU(0.2), padding='same')(x14)
-    model = Model(myinput, y)
+    model = tf.keras.Model(myinput, y)
     return model
+
 def gblock2(x, filnum,kernel):
     x = tf.keras.layers.Conv1D(filters=filnum, kernel_size=kernel, strides=1,padding='same')(x)
     x = InstanceNormalization()(x)
@@ -124,3 +126,23 @@ def upblock3(x, filnum):
     x3 = tf.keras.layers.LeakyReLU(0.2)(x2)
     return x3
 
+class InstanceNormalization(tf.keras.layers.Layer):
+    def __init__(self, epsilon=1e-5):
+        super(InstanceNormalization, self).__init__()
+        self.epsilon = epsilon
+
+    def build(self, input_shape):
+        self.scale = self.add_weight(name='scale',
+                                     shape=input_shape[-1:],
+                                     initializer=tf.random_normal_initializer(1., 0.02),
+                                     trainable=True)
+        self.offset = self.add_weight(name='offset',
+                                      shape=input_shape[-1:],
+                                      initializer='zeros',
+                                      trainable=True)
+
+    def call(self, inputs):
+        mean, variance = tf.nn.moments(inputs, axes=[1, 2], keepdims=True)
+        inv = tf.math.rsqrt(variance + self.epsilon)
+        normalized = (inputs - mean) * inv
+        return self.scale * normalized + self.offset
