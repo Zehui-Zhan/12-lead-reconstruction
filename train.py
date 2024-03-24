@@ -209,11 +209,6 @@ if __name__ == '__main__':
         # discriminator = torch.load('model/GAN1_group_cpsc2018individual_2.0/Dparams_.pkl')
         # with open('model/GAN1_group_cpsc2018individual_2.0/data.json', 'r') as f:
         #     record_dict = json.load(f)
-
-        train_dataset = data_load('/home/zhanzhehui_min/Engineering_project/lead_transformed/CPSC2018_path_traingan')
-        verify_dataset = data_load('/home/zhanzhehui_min/Engineering_project/lead_transformed/CPSC2018_path_testgan')
-        dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
-        dataloader_verify = DataLoader(verify_dataset, batch_size=args.batch_size, shuffle=True)
         optimizer_G = torch.optim.Adam(generator.parameters(), lr=0.0005, betas=(0, 0.9), weight_decay=1e-9)
         optimizer_D = torch.optim.Adam(discriminator.parameters(), lr=0.0001, betas=(0, 0.9), weight_decay=1e-9)
     elif args.type =='VAE_CNN':
@@ -221,10 +216,6 @@ if __name__ == '__main__':
         generator = generator.double()
         generator = generator.to(device)
         generator_vae = DataParallel(generator)
-        train_dataset = data_load('/home/zhanzhehui_min/Engineering_project/lead_transformed/CPSC2018_path_train3.0')
-        verify_dataset = data_load('/home/zhanzhehui_min/Engineering_project/lead_transformed/CPSC2018_path_test3.0')
-        dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
-        dataloader_verify = DataLoader(verify_dataset, batch_size=args.batch_size, shuffle=True)
         train_VAE(device, dataloader, generator_vae, args.train_epoch)
     elif args.type == 'MLP':
         print('mistake')
